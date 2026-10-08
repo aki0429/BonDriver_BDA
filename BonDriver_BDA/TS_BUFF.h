@@ -21,6 +21,8 @@ private:
 	size_t BuffSize;
 	size_t MaxCount;
 	CRITICAL_SECTION cs;
+	unsigned long long DroppedBytes;
+	void PushLocked(TS_DATA *pItem);
 
 public:
 	TS_BUFF(void);
@@ -31,5 +33,6 @@ public:
 	BOOL AddData(BYTE *pbyData, size_t size);
 	TS_DATA * Get(void);
 	size_t Size(void);
+	unsigned long long GetDroppedBytes(void);
 };
 

@@ -51,7 +51,8 @@ STDMETHODIMP CTsWriter::SetCallBackRecv(RECV_PROC pRecv, void * pParam)
 
 HRESULT CTsWriter::Write(PBYTE pbData, LONG lDataLength)
 {
-	if (lDataLength < 188) {
+	// Callback boundaries are not TS packet boundaries: retain every positive byte.
+	if (lDataLength <= 0 || pbData == NULL) {
 		return S_OK;
 	}
 

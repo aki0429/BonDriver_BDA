@@ -28,7 +28,8 @@ TS_BUFF::TS_BUFF(void)
 	: TempBuff(NULL),
 	TempOffset(0),
 	BuffSize(0),
-	MaxCount(0)
+	MaxCount(0),
+	DroppedBytes(0)
 {
 	::InitializeCriticalSection(&cs);
 }
@@ -48,7 +49,8 @@ void TS_BUFF::SetSize(size_t buffSize, size_t maxCount)
 		TempBuff = new BYTE[buffSize];
 	}
 	BuffSize = buffSize;
-	MaxCount = maxCount;
+	// MaxBuffCount=0 は空キューの front() 削除で落ちるため、最低 1 個に丸めて上限付きを保つ
+	MaxCount = maxCount ? maxCount : 1;
 }
 
 void TS_BUFF::Purge(void)
@@ -63,15 +65,22 @@ void TS_BUFF::Purge(void)
 	::LeaveCriticalSection(&cs);
 }
 
-void TS_BUFF::Add(TS_DATA *pItem)
+void TS_BUFF::PushLocked(TS_DATA *pItem)
 {
-	::EnterCriticalSection(&cs);
+	if (!pItem) return;
 	while (List.size() >= MaxCount) {
-		// オーバーフローなら古いものを消す
+		// オーバーフローなら古いものを消す。欠損量は寿命中累積する。
+		DroppedBytes += List.front()->Size;
 		SAFE_DELETE(List.front());
 		List.pop();
 	}
 	List.push(pItem);
+}
+
+void TS_BUFF::Add(TS_DATA *pItem)
+{
+	::EnterCriticalSection(&cs);
+	PushLocked(pItem);
 	::LeaveCriticalSection(&cs);
 }
 
@@ -104,12 +113,7 @@ BOOL TS_BUFF::AddData(BYTE *pbyData, size_t size)
 
 		if (pItem) {
 			// FIFOへ追加
-			while (List.size() >= MaxCount) {
-				// オーバーフローなら古いものを消す
-				SAFE_DELETE(List.front());
-				List.pop();
-			}
-			List.push(pItem);
+			PushLocked(pItem);
 			ret = TRUE;
 		}
 		::LeaveCriticalSection(&cs);
@@ -131,5 +135,16 @@ TS_DATA * TS_BUFF::Get(void)
 
 size_t TS_BUFF::Size(void)
 {
-	return List.size();
+	::EnterCriticalSection(&cs);
+	size_t count = List.size();
+	::LeaveCriticalSection(&cs);
+	return count;
+}
+
+unsigned long long TS_BUFF::GetDroppedBytes(void)
+{
+	::EnterCriticalSection(&cs);
+	unsigned long long bytes = DroppedBytes;
+	::LeaveCriticalSection(&cs);
+	return bytes;
 }

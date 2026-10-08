@@ -1,0 +1,9 @@
+# build outputs / private evidence
+.development/
+build/
+x64/
+Win32/
+Lib/
+**/x64/
+*.user
+.vs/
