@@ -29,6 +29,24 @@ BuffSize=1024
 MaxBuffCount=1024
 ```
 
+## CATV・スカパー!プレミアムサービス光（実験）
+
+PX-S1UD で **スカパー!プレミアムサービス光**（J.83B 256QAM、NID 0x000A）を 580.75MHz で受信できたという報告がありました。
+同じ Siano 系の PX-Q1UD でも試せるように、設定と小さな拡張を入れています。**Q1UD での受信は未確認です。**
+
+- サンプル: [`doc/BonDriver_BDA-Q1UD-CATV-sample.ini`](doc/BonDriver_BDA-Q1UD-CATV-sample.ini)（Shift_JIS）
+  - `UHF`: 地デジ 13〜52ch
+  - `CATV`: パススルー C13〜C63ch（ISDB-T のまま。CATV 局が地デジをパススルーで流していれば、これだけで映るはず）
+  - `光`: スカパー!プレミアムサービス光 H001〜H105（J.83B 256QAM、5.6Msps）
+  - `トラモジ`: CATV トランスモジュレーション（J.83C 64QAM/256QAM）
+- 新オプション `ChannelSettingsAutoOptions="HExt"`（作成空間 `OPTICAST-EXT`）
+  - 従来の自動生成は H001〜H058（〜463.75MHz）まで。報告の 580.75MHz はその外（同じ 6.5MHz 間隔で H076）なので、H059〜H105（470.25〜769.25MHz）を追加で作れるようにしました。
+  - 指定しなければ従来どおりで、既存の ini には影響しません。
+- QAM でロックしないときは、サンプル内のコメントにある `DVBSystemType1="DVB-C"` + `DVBSystemTypeNumber=1` を試してください。
+
+**Linux（Mirakurun + dvbv5）では、光とトラモジは使えません。** カーネルの `smsdvb` ドライバは ISDB-T / DVB-T しか扱わず、QAM の設定手段がありません。
+CATV パススルー（C13〜C63ch の ISDB-T）は Linux でも、今の構成でチャンネル設定を足せば受信できます。
+
 ## テスト
 
 `tests/stream_regression.cpp` は、実際の `CTsWriter` と `TS_BUFF` を合成データで動かすテストです（実機は不要）。

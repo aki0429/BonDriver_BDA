@@ -2063,6 +2063,7 @@ void CBonTuner::ReadIniFile(void)
 			eChGenerateOpticast = 64,			// SKY PerfecTV! Premium Service Hikari H001Å`H058
 			eChGenerateOpticast_11Plus = 72,	// SKY PerfecTV! Premium Service Hikari H011+Å`H012+
 			eChGenerateOpticast_26Plus = 73,	// SKY PerfecTV! Premium Service Hikari H026+Å`H028+
+			eChGenerateOpticast_Ext = 74,		// SKY PerfecTV! Premium Service Hikari H059Å`H105 (470.25Å`769.25MHz)
 		};
 
 		// É`ÉÉÉìÉlÉãé©ìÆê∂ê¨ópÉpÉâÉÅÅ[É^
@@ -2110,6 +2111,7 @@ void CBonTuner::ReadIniFile(void)
 		BOOL bOptOnly256QAM = FALSE;
 		BOOL bOptH11Plus = FALSE;
 		BOOL bOptH26Plus = FALSE;
+		BOOL bOptHExt = FALSE;
 		BOOL bOptOnlySD = FALSE;
 		BOOL bOptOnlyHD = FALSE;
 		BOOL bOptSpinel = FALSE;
@@ -2139,6 +2141,9 @@ void CBonTuner::ReadIniFile(void)
 				}
 				else if (opt == L"H026+") {
 					bOptH26Plus = TRUE;
+				}
+				else if (opt == L"HEXT") {
+					bOptHExt = TRUE;
 				}
 				else if (opt == L"ONLYSD") {
 					bOptOnlySD = TRUE;
@@ -2358,6 +2363,10 @@ void CBonTuner::ReadIniFile(void)
 				ChannelGenerate[num++] = L"OPTICAST-26+," + std::to_wstring(modulationNumberOpticast) + L",,,0";
 				ChannelGenerate[num++] = L"OPTICAST:28," + std::to_wstring(modulationNumberOpticast) + L",,,0";
 			}
+			if (bOptHExt) {
+				// H058ÇÊÇËè„ÇÃé¸îgêî(UHFë—)ÇégópÇµÇƒÇ¢ÇÈèÍçá
+				ChannelGenerate[num++] = L"OPTICAST-EXT," + std::to_wstring(modulationNumberOpticast) + L",,,0";
+			}
 			if (bOptAll) {
 				ChannelGenerate[num++] = L"OPTICAST-11+," + std::to_wstring(modulationNumberOpticast) + L",,,0";
 				ChannelGenerate[num++] = L"OPTICAST-26+," + std::to_wstring(modulationNumberOpticast) + L",,,0";
@@ -2551,6 +2560,15 @@ void CBonTuner::ReadIniFile(void)
 				Generate.NameFormat = L"H%03d+";
 				Generate.NameOffset = 26UL;
 			}
+			else if (genSpace == L"OPTICAST-EXT") {
+				Generate.Space = eChGenerateOpticast_Ext;
+				Generate.Offset = min(offset, 47UL - 1UL);
+				Generate.Count = min(count, 47UL - offset);
+				Generate.ModulationNumber = 0UL;
+				Generate.TuningFreq = 0UL;
+				Generate.NameFormat = L"H%03d";
+				Generate.NameOffset = 59UL;
+			}
 			// ëäëŒTSçÏê¨êî
 			if (buf2[3] != L"") {
 				Generate.RelativeTS = common::WStringToLong(buf2[3]);
@@ -2668,6 +2686,10 @@ void CBonTuner::ReadIniFile(void)
 				break;
 			case eChGenerateOpticast_26Plus:
 				freqBase = 259750UL;
+				freqStep = 6500UL;
+				break;
+			case eChGenerateOpticast_Ext:
+				freqBase = 470250UL;
 				freqStep = 6500UL;
 				break;
 			}
